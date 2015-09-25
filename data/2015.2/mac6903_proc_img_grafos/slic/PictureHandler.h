@@ -3,11 +3,13 @@
 //
 // PictureHandler.h: interface for the PictureHandler class.
 //
-// Copyright (c) 2007 Radhakrishna Achanta (asv.radhakrishna [at] gmail [dot] com)
-// All rights reserved
+//===========================================================================
+// Copyright (c) 2013 Radhakrishna Achanta.
 //
-//=================================================================================
-//=================================================================================
+// For commercial use please contact the author:
+//
+// Email: firstname.lastname@epfl.ch
+//===========================================================================
 
 #if !defined(PICTUREHANDLER_INCLUDED_)
 #define PICTUREHANDLER_INCLUDED_

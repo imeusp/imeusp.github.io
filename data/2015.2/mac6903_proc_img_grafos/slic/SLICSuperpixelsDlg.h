@@ -40,7 +40,6 @@ private:
 
 	bool BrowseForFolder(string& folderpath);
 	void GetPictures(vector<string>& picvec);
-	void DoSupervoxelVideoSegmentation();
 public:
 	afx_msg void OnEnChangeEditSpcount();
 	afx_msg void OnEnChangeEditCompactness();

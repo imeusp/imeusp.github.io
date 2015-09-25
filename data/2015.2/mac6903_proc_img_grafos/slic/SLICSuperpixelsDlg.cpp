@@ -32,9 +32,9 @@ void CSLICSuperpixelsDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_EDIT_SPCOUNT, m_spcount);
-	DDV_MinMaxInt(pDX, m_spcount, 1, 10000000);
+	DDV_MinMaxInt(pDX, m_spcount, 1, 100000);
 	DDX_Text(pDX, IDC_EDIT_COMPACTNESS, m_compactness);
-	DDV_MinMaxDouble(pDX, m_compactness, 1.0, 80.0);
+	DDV_MinMaxDouble(pDX, m_compactness, 1.0, 50.0);
 }
 
 BEGIN_MESSAGE_MAP(CSLICSuperpixelsDlg, CDialog)
@@ -187,51 +187,12 @@ bool CSLICSuperpixelsDlg::BrowseForFolder(string& folderpath)
 }
 
 //===========================================================================
-///	DoSupervoxelVideoSegmentation
-///
-/// Supervoxel segmentation demo
-//===========================================================================
-void CSLICSuperpixelsDlg::DoSupervoxelVideoSegmentation()
-{
-	const int width	= 7;
-    const int height = 7;
-    const int depth = 7;
-    const int sz = (width*height);
-
-    int supervoxelsize = 8;//size in pixels (2x2x2)
-    double compactness = 10.0;
-    int numlabels = 0;
-    int** klabels = new int*[depth];
-    unsigned int** ubuff = new unsigned int *[depth];
-    for(int i=0; i < depth; i++)
-    {
-            ubuff[i] = new unsigned int[sz];
-            klabels[i] = new int[sz];
-
-            for (int k=0; k < sz; k++)
-                    ubuff[i][k] = (unsigned int)rand();//normally this would be 2d slice pixel data
-    }
-    SLIC slic;
-    slic.DoSupervoxelSegmentation( ubuff, width, height, depth, klabels, numlabels, supervoxelsize, compactness );
-
-	for(int i=0; i < depth; i++)
-	{
-		delete [] klabels[i];
-		delete [] ubuff[i];
-	}
-	delete [] klabels; delete [] ubuff;
-}
-
-//===========================================================================
 ///	OnBnClickedButtonCreatesuperpixels
 ///
 ///	The main function
 //===========================================================================
 void CSLICSuperpixelsDlg::OnBnClickedButtonCreatesuperpixels()
 {
-	//-------------------------------------------------------------------
-	//DoSupervoxelVideoSegmentation();AfxMessageBox(L"Done!", 0, 0);return;//Uncomment the line for a Supervoxel demo
-	//-------------------------------------------------------------------
 	PictureHandler picHand;
 	vector<string> picvec(0);
 	picvec.resize(0);
@@ -241,6 +202,9 @@ void CSLICSuperpixelsDlg::OnBnClickedButtonCreatesuperpixels()
 
 	int numPics( picvec.size() );
 
+	//if(m_spcount < 0 || m_spcount < 20) m_spcount = 20;
+	if(m_spcount < 0) m_spcount = 200;
+
 	for( int k = 0; k < numPics; k++ )
 	{
 		UINT* img = NULL;
@@ -249,19 +213,20 @@ void CSLICSuperpixelsDlg::OnBnClickedButtonCreatesuperpixels()
 
 		picHand.GetPictureBuffer( picvec[k], img, width, height );
 		int sz = width*height;
-		//---------------------------------------------------------
-		if(m_spcount < 20 || m_spcount > sz/4) m_spcount = sz/200;//i.e the default size of the superpixel is 200 pixels
-		if(m_compactness < 1.0 || m_compactness > 80.0) m_compactness = 20.0;
-		//---------------------------------------------------------
+		if(m_spcount > sz) AfxMessageBox(L"Number of superpixels exceeds number of pixels in the image");
+
 		int* labels = new int[sz];
 		int numlabels(0);
 		SLIC slic;
-		slic.DoSuperpixelSegmentation_ForGivenNumberOfSuperpixels(img, width, height, labels, numlabels, m_spcount, m_compactness);
-		//slic.DoSuperpixelSegmentation_ForGivenSuperpixelSize(img, width, height, labels, numlabels, 10, m_compactness);//demo
-		slic.DrawContoursAroundSegments(img, labels, width, height, 0);
+		slic.PerformSLICO_ForGivenK(img, width, height, labels, numlabels, m_spcount, m_compactness);//for a given number K of superpixels
+		//slic.PerformSLICO_ForGivenStepSize(img, width, height, labels, numlabels, m_stepsize, m_compactness);//for a given grid step size
+		//slic.DrawContoursAroundSegments(img, labels, width, height, 0);//for black contours around superpixels
+		slic.DrawContoursAroundSegmentsTwoColors(img, labels, width, height);//for black-and-white contours around superpixels
+		slic.SaveSuperpixelLabels(labels,width,height,picvec[k],saveLocation);
 		if(labels) delete [] labels;
 		
-		picHand.SavePicture(img, width, height, picvec[k], saveLocation, 1, "_SLIC");// 0 is for BMP and 1 for JPEG)
+		picHand.SavePicture(img, width, height, picvec[k], saveLocation, 1, "_SLICO");// 0 is for BMP and 1 for JPEG)
+
 		if(img) delete [] img;
 	}
 	AfxMessageBox(L"Done!", 0, 0);
